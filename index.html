@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maths Practice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- KaTeX for LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMVIhbCwHMAq2EVqFlyhKtxDFFFb12lCltUAEiCNPa5liyRjA" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" xintegrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loader {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .progress-bar-fill {
+            transition: width 0.5s ease-in-out;
+        }
+        /* Custom styles for modals */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        /* Styling for rendered markdown */
+        .prose-output h1, .prose-output h2, .prose-output h3 { margin-top: 1.2em; margin-bottom: 0.5em; font-weight: 600; }
+        .prose-output p { margin-bottom: 0.8em; }
+        .prose-output ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.8em; }
+        .prose-output ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.8em; }
+        .prose-output code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Roboto Mono', monospace; }
+        .prose-output strong { font-weight: 600; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="app" class="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
+
+        <!-- Modals Container -->
+        <!-- "Test Ready" Modal -->
+        <div id="test-ready-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 modal-overlay">
+            <div class="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-md modal-content">
+                <h2 class="text-3xl font-bold text-green-600">You're Ready! 🎉</h2>
+                <p class="mt-4 text-slate-600">You've achieved 90% or higher accuracy in all topics. You are well-prepared for your test. Good luck!</p>
+                <button id="close-test-ready-modal-btn" class="mt-6 bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors">Continue Practicing</button>
+            </div>
+        </div>
+        
+        <!-- "Reset Progress" Confirmation Modal -->
+        <div id="reset-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 modal-overlay">
+            <div class="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-md modal-content">
+                <h2 class="text-2xl font-bold text-slate-800">Are you sure?</h2>
+                <p class="mt-4 text-slate-600">This will reset all your progress, including scores and accuracy for every topic. This action cannot be undone.</p>
+                <div class="mt-6 flex gap-4">
+                    <button id="cancel-reset-btn" class="flex-1 bg-slate-200 text-slate-800 font-semibold py-2 px-6 rounded-lg hover:bg-slate-300 transition-colors">Cancel</button>
+                    <button id="confirm-reset-btn" class="flex-1 bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">Yes, Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- "Topic Explanation" Modal -->
+        <div id="explanation-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 modal-overlay">
+            <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-2xl w-full modal-content">
+                <div class="flex justify-between items-center">
+                    <h2 id="explanation-title" class="text-2xl font-bold text-indigo-600">Topic Explanation</h2>
+                    <button id="close-explanation-btn" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+                </div>
+                <div id="explanation-content" class="mt-4 text-slate-700 max-h-[60vh] overflow-y-auto pr-2 prose-output">
+                    <!-- AI-generated content will go here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Header and Navigation -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-indigo-600">Maths Practice</h1>
+            <p class="text-slate-500 mt-1">Year 8 Set 1 Equations & Problem Solving</p>
+            <nav class="mt-6 border-b border-slate-200">
+                <ul class="flex space-x-1 sm:space-x-4">
+                    <li><button id="nav-practice" class="py-3 px-2 sm:px-4 border-b-2 border-indigo-500 font-semibold text-indigo-600">Practice Zone</button></li>
+                    <li><button id="nav-explorer" class="py-3 px-2 sm:px-4 border-b-2 border-transparent text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors">Topics & Explanations</button></li>
+                    <li><button id="nav-progress" class="py-3 px-2 sm:px-4 border-b-2 border-transparent text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors">Overall Progress</button></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Practice Zone Section -->
+            <section id="practice-zone">
+                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div id="loader" class="hidden justify-center items-center py-20">
+                        <div class="loader"></div>
+                        <p class="ml-4 text-slate-500">Thinking and evaluating...</p>
+                    </div>
+
+                    <div id="question-container" class="hidden">
+                        <div class="flex justify-between items-center mb-2">
+                             <h2 class="text-lg font-semibold">Question:</h2>
+                             <span id="practice-topic-badge" class="text-xs font-medium bg-indigo-100 text-indigo-700 py-1 px-3 rounded-full"></span>
+                        </div>
+                        <div id="question-text" class="text-xl font-mono bg-slate-100 p-4 rounded-lg text-slate-700 mb-4"></div>
+                        
+                        <div id="hint-container" class="mb-4"></div>
+
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="user-answer" placeholder="Type your answer here" class="flex-grow p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                            <button id="submit-btn" class="bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed">Submit Answer</button>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button id="hint-btn" class="text-sm text-indigo-600 hover:underline disabled:text-slate-400 disabled:no-underline" disabled>Need a hint?</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="feedback-container" class="mt-6 hidden fade-in"></div>
+            </section>
+
+            <!-- Topic Explorer Section -->
+            <section id="topic-explorer" class="hidden">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold mb-1">Topic Mastery</h2>
+                    <p class="text-slate-500 mb-6">Practice specific topics to improve your skills, or select "Learn" for an AI-powered explanation. Aim for 90% accuracy in each!</p>
+                    <div id="topic-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Topic cards will be dynamically inserted here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- My Progress Section -->
+            <section id="progress-section" class="hidden">
+                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold mb-4">Your Overall Progress</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div class="bg-slate-100 p-4 rounded-lg">
+                            <p class="text-3xl font-bold text-indigo-600" id="stats-attempted">0</p>
+                            <p class="text-sm text-slate-500">Attempted</p>
+                        </div>
+                        <div class="bg-slate-100 p-4 rounded-lg">
+                            <p class="text-3xl font-bold text-green-600" id="stats-correct">0</p>
+                            <p class="text-sm text-slate-500">Correct</p>
+                        </div>
+                        <div class="bg-slate-100 p-4 rounded-lg">
+                            <p class="text-3xl font-bold text-red-600" id="stats-incorrect">0</p>
+                            <p class="text-sm text-slate-500">Incorrect</p>
+                        </div>
+                        <div class="bg-slate-100 p-4 rounded-lg">
+                            <p class="text-3xl font-bold text-slate-700" id="stats-accuracy">0%</p>
+                            <p class="text-sm text-slate-500">Accuracy</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <button id="reset-progress-btn" class="text-sm text-red-600 hover:underline">Reset my progress</button>
+                    </div>
+                 </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Constants & Config ---
+            const TOPICS = {
+                'inspection': { name: 'Solving by Inspection' },
+                'multi_step': { name: 'Multi-step Algebra' },
+                'both_sides': { name: 'Unknown on Both Sides' },
+                'word_problems': { name: 'Word Problems' }
+            };
+            const GOAL_ACCURACY = 0.9;
+
+            // --- DOM Elements ---
+            const navButtons = { 
+                practice: document.getElementById('nav-practice'), 
+                explorer: document.getElementById('nav-explorer'), 
+                progress: document.getElementById('nav-progress') 
+            };
+            const sections = { 
+                practice: document.getElementById('practice-zone'), 
+                explorer: document.getElementById('topic-explorer'), 
+                progress: document.getElementById('progress-section') 
+            };
+            // Main page elements
+            const loader = document.getElementById('loader');
+            const questionContainer = document.getElementById('question-container');
+            const questionText = document.getElementById('question-text');
+            const userAnswerInput = document.getElementById('user-answer');
+            const submitBtn = document.getElementById('submit-btn');
+            const hintBtn = document.getElementById('hint-btn');
+            const feedbackContainer = document.getElementById('feedback-container');
+            const hintContainer = document.getElementById('hint-container');
+            const resetProgressBtn = document.getElementById('reset-progress-btn');
+            const topicCardsContainer = document.getElementById('topic-cards-container');
+            const practiceTopicBadge = document.getElementById('practice-topic-badge');
+            // Modals
+            const testReadyModal = document.getElementById('test-ready-modal');
+            const closeTestReadyModalBtn = document.getElementById('close-test-ready-modal-btn');
+            const resetModal = document.getElementById('reset-modal');
+            const cancelResetBtn = document.getElementById('cancel-reset-btn');
+            const confirmResetBtn = document.getElementById('confirm-reset-btn');
+            const explanationModal = document.getElementById('explanation-modal');
+            const explanationTitle = document.getElementById('explanation-title');
+            const explanationContent = document.getElementById('explanation-content');
+            const closeExplanationBtn = document.getElementById('close-explanation-btn');
+
+            // --- State Management ---
+            let state = {
+                currentView: 'practice',
+                currentQuestionData: { question: '', answer: '', topic: '' },
+                currentPracticeTopic: null, // null for general, or a topic key
+                difficulty: 'medium', // easy, medium, hard
+                isLoading: false,
+                progress: initializeProgress()
+            };
+
+            // --- Gemini API ---
+            const API_KEY = "AIzaSyDktoacs4lfiNwrRQeqb0iQ-jnW77JwLO0"; 
+
+            async function callGemini(prompt, schema) {
+                state.isLoading = true;
+                updateUI();
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${API_KEY}`;
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                if (schema) {
+                    payload.generationConfig = { responseMimeType: "application/json", responseSchema: schema };
+                }
+
+                try {
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                        return result.candidates[0].content.parts[0].text;
+                    }
+                    throw new Error("Invalid API response structure.");
+                } catch (error) {
+                    console.error("Gemini API call failed:", error);
+                    const errorHtml = `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg"><p><strong>Error:</strong> Could not connect to the AI. Please try again later.</p></div>`;
+                    if(state.currentView === 'practice') {
+                        feedbackContainer.innerHTML = errorHtml;
+                        feedbackContainer.classList.remove('hidden');
+                    } else if (explanationModal.classList.contains('flex')) {
+                        explanationContent.innerHTML = errorHtml;
+                    }
+                    return null;
+                } finally {
+                    state.isLoading = false;
+                    updateUI();
+                }
+            }
+            
+            // --- Formatting Helper ---
+            function renderFormattedText(element, text) {
+                element.innerHTML = marked.parse(text);
+                renderMathInElement(element, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ]
+                });
+            }
+
+            // --- Question Logic ---
+            async function getNewQuestion() {
+                const topicKey = state.currentPracticeTopic || Object.keys(TOPICS)[Math.floor(Math.random() * Object.keys(TOPICS).length)];
+                const topicName = TOPICS[topicKey].name;
+                
+                let difficultyInstruction = '';
+                if (state.difficulty === 'easy') {
+                    difficultyInstruction = 'Make the question straightforward with simple integer calculations.';
+                } else if (state.difficulty === 'hard') {
+                    difficultyInstruction = 'Make the question more complex, possibly involving fractions, decimals, negative numbers, or a multi-step word problem setup.';
+                }
+
+                const prompt = `Generate a single, ${state.difficulty} difficulty, Year 8 level math question for the topic: "${topicName}". ${difficultyInstruction} Provide the question, the final numerical answer (or simple algebraic expression), and the topic key. The topic key must be one of: ${Object.keys(TOPICS).join(', ')}. Format the output as a JSON object.`;
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        question: { type: "STRING" },
+                        answer: { type: "STRING" },
+                        topic: { type: "STRING", enum: Object.keys(TOPICS) }
+                    },
+                    required: ["question", "answer", "topic"]
+                };
+
+                const resultText = await callGemini(prompt, schema);
+                if (resultText) {
+                    try {
+                        const result = JSON.parse(resultText);
+                        state.currentQuestionData = {
+                            question: result.question,
+                            answer: String(result.answer).trim(),
+                            topic: result.topic
+                        };
+                        resetPracticeZone();
+                    } catch (e) {
+                        console.error("Failed to parse question JSON:", e);
+                        getNewQuestion();
+                    }
+                }
+                updateUI();
+            }
+            
+            function resetPracticeZone() {
+                feedbackContainer.innerHTML = '';
+                feedbackContainer.classList.add('hidden');
+                hintContainer.innerHTML = '';
+                userAnswerInput.value = '';
+                userAnswerInput.disabled = false;
+                submitBtn.disabled = false;
+                hintBtn.disabled = false;
+            }
+
+            async function checkAnswer() {
+                const userAnswer = userAnswerInput.value.trim();
+                if (!userAnswer) return;
+
+                userAnswerInput.disabled = true;
+                submitBtn.disabled = true;
+                hintBtn.disabled = true;
+
+                const { question, answer } = state.currentQuestionData;
+                const prompt = `The question was: "${question}". The user's answer is "${userAnswer}". The correct answer is "${answer}". 1. Is the user's answer correct? (Consider equivalent forms, e.g., 0.5 and 1/2, or x=5 and 5). 2. Provide a friendly, step-by-step explanation for how to solve the problem. Format the explanation in Markdown, using LaTeX for equations (e.g., $...$ for inline, $$...$$ for block). Format the entire output as a JSON object.`;
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        isCorrect: { type: "BOOLEAN" },
+                        explanation: { type: "STRING" }
+                    },
+                    required: ["isCorrect", "explanation"]
+                };
+                
+                const resultText = await callGemini(prompt, schema);
+                if (resultText) {
+                    try {
+                        const result = JSON.parse(resultText);
+                        handleFeedback(result.isCorrect, result.explanation);
+                        updateProgress(state.currentQuestionData.topic, result.isCorrect);
+                        state.difficulty = result.isCorrect ? (state.difficulty === 'medium' ? 'hard' : 'medium') : 'easy';
+                    } catch (e) { console.error("Failed to parse answer JSON:", e); }
+                }
+            }
+
+            async function getHint() {
+                hintBtn.disabled = true;
+                const prompt = `Give a short, one-sentence hint for the following math problem. Format the response as Markdown. Do not give the answer. Question: "${state.currentQuestionData.question}"`;
+                const hintText = await callGemini(prompt);
+                if (hintText) {
+                    const hintDiv = document.createElement('div');
+                    hintDiv.className = "bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-3 rounded-lg text-sm fade-in prose-output";
+                    renderFormattedText(hintDiv, `**Hint:** ${hintText}`);
+                    hintContainer.innerHTML = '';
+                    hintContainer.appendChild(hintDiv);
+                }
+            }
+
+            function handleFeedback(isCorrect, explanation) {
+                const title = isCorrect ? "Correct!" : "Not quite...";
+                const bgColor = isCorrect ? "bg-green-100" : "bg-red-100";
+                const borderColor = isCorrect ? "border-green-500" : "border-red-500";
+                const textColor = isCorrect ? "text-green-700" : "text-red-700";
+
+                feedbackContainer.innerHTML = `
+                    <div class="${bgColor} border-l-4 ${borderColor} ${textColor} p-4 rounded-lg">
+                        <h3 class="font-bold text-lg">${title}</h3>
+                        <div class="mt-2">
+                           <p>The correct answer is <strong>${state.currentQuestionData.answer}</strong>.</p>
+                           <p><strong>Explanation:</strong></p>
+                           <div id="explanation-output" class="prose-output"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button id="new-question-btn" class="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">Next Question</button>
+                    </div>`;
+                
+                const explanationOutput = document.getElementById('explanation-output');
+                renderFormattedText(explanationOutput, explanation);
+
+                feedbackContainer.classList.remove('hidden');
+                document.getElementById('new-question-btn').addEventListener('click', getNewQuestion);
+            }
+            
+            async function getTopicExplanation(topicName) {
+                explanationTitle.textContent = topicName;
+                explanationContent.innerHTML = `<div class="flex justify-center items-center py-10"><div class="loader"></div><p class="ml-4 text-slate-500">Generating explanation...</p></div>`;
+                explanationModal.classList.remove('hidden');
+                explanationModal.classList.add('flex');
+
+                const prompt = `Explain the math topic "${topicName}" to a Year 8 student. Use simple language, short paragraphs, and provide a clear, simple example with a step-by-step solution. Format the entire response in Markdown, and use LaTeX for equations (e.g., $...$ for inline, $$...$$ for block).`;
+                const explanationText = await callGemini(prompt);
+                if (explanationText) {
+                    renderFormattedText(explanationContent, explanationText);
+                }
+            }
+
+            // --- Progress & Cookies ---
+            function initializeProgress() {
+                const progress = {};
+                for (const key in TOPICS) {
+                    progress[key] = { attempted: 0, correct: 0 };
+                }
+                return progress;
+            }
+
+            function setCookie(name, value, days) {
+                let expires = "";
+                if (days) {
+                    const date = new Date();
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    expires = "; expires=" + date.toUTCString();
+                }
+                document.cookie = name + "=" + (JSON.stringify(value) || "") + expires + "; path=/; SameSite=Lax";
+            }
+
+            function getCookie(name) {
+                const nameEQ = name + "=";
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) == 0) {
+                        try { return JSON.parse(c.substring(nameEQ.length, c.length)); } catch (e) { return null; }
+                    }
+                }
+                return null;
+            }
+
+            function loadProgress() {
+                const savedProgress = getCookie('mathTutorProgressV3');
+                if (savedProgress) {
+                    for(const key in TOPICS) {
+                        if (!savedProgress[key]) {
+                            savedProgress[key] = { attempted: 0, correct: 0 };
+                        }
+                    }
+                    state.progress = savedProgress;
+                }
+                updateAllProgressUI();
+            }
+
+            function updateProgress(topicKey, isCorrect) {
+                if (state.progress[topicKey]) {
+                    state.progress[topicKey].attempted++;
+                    if (isCorrect) {
+                        state.progress[topicKey].correct++;
+                    }
+                }
+                setCookie('mathTutorProgressV3', state.progress, 365);
+                updateAllProgressUI();
+                checkOverallProgress();
+            }
+
+            function resetProgress() {
+                state.progress = initializeProgress();
+                setCookie('mathTutorProgressV3', state.progress, -1);
+                setCookie('mathTutorProgressV3', initializeProgress(), 365);
+                updateAllProgressUI();
+                resetModal.classList.add('hidden');
+                resetModal.classList.remove('flex');
+            }
+
+            function updateAllProgressUI() {
+                // Overall Progress Tab
+                let totalAttempted = 0, totalCorrect = 0;
+                for(const key in state.progress) {
+                    totalAttempted += state.progress[key].attempted;
+                    totalCorrect += state.progress[key].correct;
+                }
+                const totalIncorrect = totalAttempted - totalCorrect;
+                const totalAccuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+
+                document.getElementById('stats-attempted').textContent = totalAttempted;
+                document.getElementById('stats-correct').textContent = totalCorrect;
+                document.getElementById('stats-incorrect').textContent = totalIncorrect;
+                document.getElementById('stats-accuracy').textContent = `${totalAccuracy}%`;
+                
+                // Topic Explorer Tab
+                renderTopicExplorer();
+            }
+            
+            function checkOverallProgress() {
+                if (getCookie('testReadyModalShown')) return;
+
+                let allGoalsMet = true;
+                if (Object.keys(state.progress).length < Object.keys(TOPICS).length) {
+                    allGoalsMet = false;
+                }
+
+                for(const key in TOPICS) {
+                    const topicProgress = state.progress[key];
+                    const accuracy = topicProgress.attempted > 0 ? (topicProgress.correct / topicProgress.attempted) : 0;
+                    if(accuracy < GOAL_ACCURACY || topicProgress.attempted < 5) {
+                        allGoalsMet = false;
+                        break;
+                    }
+                }
+
+                if(allGoalsMet) {
+                    testReadyModal.classList.remove('hidden');
+                    testReadyModal.classList.add('flex');
+                    setCookie('testReadyModalShown', true, 1);
+                }
+            }
+
+            // --- UI & Navigation ---
+            function renderTopicExplorer() {
+                topicCardsContainer.innerHTML = '';
+                for (const key in TOPICS) {
+                    const topic = TOPICS[key];
+                    const progress = state.progress[key] || { attempted: 0, correct: 0 };
+                    const accuracy = progress.attempted > 0 ? (progress.correct / progress.attempted) : 0;
+                    const accuracyPercent = Math.round(accuracy * 100);
+                    const isMastered = accuracy >= GOAL_ACCURACY;
+
+                    const card = document.createElement('div');
+                    card.className = `p-4 border rounded-lg flex flex-col ${isMastered ? 'bg-green-50 border-green-200' : 'bg-white'}`;
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                           <h3 class="font-bold text-slate-800">${topic.name}</h3>
+                           ${isMastered ? `<span class="text-xs font-medium bg-green-200 text-green-800 py-1 px-2 rounded-full">Mastered</span>` : ''}
+                        </div>
+                        <div class="text-sm text-slate-500 mt-2">Accuracy: ${accuracyPercent}%</div>
+                        <div class="w-full bg-slate-200 rounded-full h-2.5 mt-2 mb-4">
+                            <div class="bg-indigo-600 h-2.5 rounded-full progress-bar-fill" style="width: ${accuracyPercent}%"></div>
+                        </div>
+                        <div class="mt-auto grid grid-cols-2 gap-2">
+                            <button data-topic-name="${topic.name}" class="learn-topic-btn w-full text-center bg-indigo-100 text-indigo-700 font-semibold py-2 px-3 rounded-md hover:bg-indigo-200 transition-colors">
+                                Learn
+                            </button>
+                            <button data-topic-key="${key}" class="practice-topic-btn w-full text-center bg-slate-100 text-slate-700 font-semibold py-2 px-3 rounded-md hover:bg-slate-200 transition-colors">
+                                Practice
+                            </button>
+                        </div>
+                    `;
+                    topicCardsContainer.appendChild(card);
+                }
+                topicCardsContainer.addEventListener('click', (e) => {
+                    const practiceBtn = e.target.closest('.practice-topic-btn');
+                    const learnBtn = e.target.closest('.learn-topic-btn');
+
+                    if (practiceBtn) {
+                        const topicKey = practiceBtn.dataset.topicKey;
+                        state.currentPracticeTopic = topicKey;
+                        switchView('practice');
+                        getNewQuestion();
+                    } else if (learnBtn) {
+                        const topicName = learnBtn.dataset.topicName;
+                        getTopicExplanation(topicName);
+                    }
+                });
+            }
+
+            function switchView(view) {
+                state.currentView = view;
+                if (view === 'practice' && state.currentPracticeTopic) {
+                    state.currentPracticeTopic = null;
+                }
+                updateUI();
+            }
+
+            function updateUI() {
+                // Loader
+                loader.classList.toggle('hidden', !state.isLoading || state.currentView !== 'practice');
+                loader.classList.toggle('flex', state.isLoading && state.currentView === 'practice');
+                questionContainer.classList.toggle('hidden', state.isLoading && state.currentView === 'practice');
+
+                // Practice Topic Badge
+                if (state.currentPracticeTopic) {
+                    practiceTopicBadge.textContent = TOPICS[state.currentPracticeTopic].name;
+                    practiceTopicBadge.classList.remove('hidden');
+                } else if (state.currentQuestionData.topic && TOPICS[state.currentQuestionData.topic]) {
+                     practiceTopicBadge.textContent = `General: ${TOPICS[state.currentQuestionData.topic].name}`;
+                     practiceTopicBadge.classList.remove('hidden');
+                } else {
+                    practiceTopicBadge.classList.add('hidden');
+                }
+                
+                // Question Text
+                if(state.currentQuestionData.question) {
+                    renderFormattedText(questionText, state.currentQuestionData.question);
+                }
+
+                // Section Visibility & Nav Styling
+                for (const sectionKey in sections) {
+                    const isVisible = sectionKey === state.currentView;
+                    sections[sectionKey].classList.toggle('hidden', !isVisible);
+                    navButtons[sectionKey].classList.toggle('border-indigo-500', isVisible);
+                    navButtons[sectionKey].classList.toggle('text-indigo-600', isVisible);
+                    navButtons[sectionKey].classList.toggle('border-transparent', !isVisible);
+                    navButtons[sectionKey].classList.toggle('text-slate-500', !isVisible);
+                }
+            }
+            
+            // --- Event Listeners ---
+            function setupEventListeners() {
+                // Navigation
+                for (const key in navButtons) {
+                    navButtons[key].addEventListener('click', () => switchView(key));
+                }
+                // Practice Zone
+                submitBtn.addEventListener('click', checkAnswer);
+                userAnswerInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') checkAnswer(); });
+                hintBtn.addEventListener('click', getHint);
+                // Progress
+                resetProgressBtn.addEventListener('click', () => {
+                    resetModal.classList.remove('hidden');
+                    resetModal.classList.add('flex');
+                });
+                // Modals
+                closeTestReadyModalBtn.addEventListener('click', () => {
+                    testReadyModal.classList.add('hidden');
+                    testReadyModal.classList.remove('flex');
+                });
+                cancelResetBtn.addEventListener('click', () => {
+                    resetModal.classList.add('hidden');
+                    resetModal.classList.remove('flex');
+                });
+                confirmResetBtn.addEventListener('click', resetProgress);
+                closeExplanationBtn.addEventListener('click', () => {
+                    explanationModal.classList.add('hidden');
+                    explanationModal.classList.remove('flex');
+                });
+            }
+
+            // --- Initialization ---
+            function init() {
+                loadProgress();
+                setupEventListeners();
+                getNewQuestion();
+                updateUI();
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
